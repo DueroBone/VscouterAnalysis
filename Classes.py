@@ -6,14 +6,12 @@ class AutoEvent:
         self,
         x: float,
         y: float,
-        driveType: str,
         hopperPercent: float,
         shotsPercent: float,
         timeSeconds: float,
     ):
         self.x = x
         self.y = y
-        self.driveType = driveType
         self.hopperPercent = hopperPercent
         self.shotsPercent = shotsPercent
         self.timeSeconds = timeSeconds
@@ -40,17 +38,18 @@ class TeleEvent:
         self.timeSeconds = timeSeconds
 
 
-
 class Climb:
     def __init__(self, position: str, timeSeconds: float, failed: bool):
         self.position = position
         self.timeSeconds = timeSeconds
         self.failed = failed
 
+
 class Defense:
     def __init__(self, time: float, skill: str):
         self.time = time
         self.skill = skill
+
 
 class Alliance(Enum):
     RED = "redAlliance"
@@ -74,10 +73,54 @@ class MatchData:
         self.matchNumber = matchNumber
         self.alliance = alliance
         self.scouterInitials = scouterInitials
-        self.selectTeam = teamNum
+        self.teamNum = teamNum
         self.autoEvents = autoEvents
         self.teleEvents = teleEvents
         self.climb = climb
         self.comments = comments
         self.broken = broken
         self.defense = defense
+
+
+class DriveTrainType(Enum):
+    SWERVE = "Swerve"
+    TANK = "Tank"
+    MECANUM = "Mecanum"
+    OTHER = "Other"
+
+
+class PitData:
+    def __init__(
+        self,
+        scouterInitials: str,
+        teamNum: int,
+        drivetrainType: DriveTrainType,
+        weight: float,
+        climbingAbility: int,
+        maxFuelStorage: int,
+        trenchDriveAbility: bool,
+        rotatableShooter: bool,
+        intakeFromDepot: bool,
+        intakeFromOutpost: bool,
+        image: str | None,
+    ):
+        self.teamNum = teamNum
+        self.scouterInitials = scouterInitials
+        self.drivetrainType = drivetrainType
+        self.weight = weight
+        self.climbingAbility = climbingAbility
+        self.maxFuelStorage = maxFuelStorage
+        self.trenchDriveAbility = trenchDriveAbility
+        self.rotatableShooter = rotatableShooter
+        self.intakeFromDepot = intakeFromDepot
+        self.intakeFromOutpost = intakeFromOutpost
+        self.image = image
+
+
+class TeamData:
+    def __init__(
+        self, teamNum: int, pit_data: PitData | None, matches: list[MatchData] | None
+    ):
+        self.teamNum = teamNum
+        self.pit_data: PitData | None = pit_data
+        self.matches: list[MatchData] | None = matches
