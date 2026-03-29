@@ -1,6 +1,7 @@
 import json
 from Classes import *
 import os
+import main
 
 
 def _parse_percent(value) -> float:
@@ -357,6 +358,7 @@ def sort_team_data(teamData: dict[int, TeamData]) -> dict[int, TeamData]:
     # Sort the team data by team number
     return dict(sorted(teamData.items(), key=lambda item: item[0]))
 
+
 def parse_folder(folder_name: str) -> dict[int, TeamData] | None:
     # Open folder within same directory as this script and find all .json files.
     data_folder = os.path.join(os.path.dirname(__file__), folder_name)
@@ -391,3 +393,7 @@ def parse_folder(folder_name: str) -> dict[int, TeamData] | None:
         f"Successfully parsed {len(team_data)} teams from {len(matches)} matches and {len(pits)} pit entries across {len(json_files)} files."
     )
     return sort_team_data(team_data)
+
+
+if __name__ == "__main__":
+    main.main()
