@@ -129,6 +129,9 @@ def compare_team_scores(teams: list[TeamData], hidden_teams: list[int] = []):
         medianprops=dict(color=autoPrimary, linewidth=2.5),
         whiskerprops=dict(color=autoSecondary, linewidth=1.5),
         capprops=dict(color=autoSecondary, linewidth=1.5),
+        flierprops=dict(
+            markerfacecolor=autoSecondary, markeredgecolor=autoPrimary, markersize=5
+        ),
     )
     tele_boxplot = plt.boxplot(
         teleShots_data,
@@ -138,7 +141,11 @@ def compare_team_scores(teams: list[TeamData], hidden_teams: list[int] = []):
         medianprops=dict(color=telePrimary, linewidth=2.5),
         whiskerprops=dict(color=teleSecondary, linewidth=1.5),
         capprops=dict(color=teleSecondary, linewidth=1.5),
+        flierprops=dict(
+            markerfacecolor=teleSecondary, markeredgecolor=telePrimary, markersize=5
+        ),
     )
+
     climb_boxplot = plt.boxplot(
         climb_data,
         labels=team_nums,  # type: ignore
@@ -147,7 +154,11 @@ def compare_team_scores(teams: list[TeamData], hidden_teams: list[int] = []):
         medianprops=dict(color=climbPrimary, linewidth=2.5),
         whiskerprops=dict(color=climbSecondary, linewidth=1.5),
         capprops=dict(color=climbSecondary, linewidth=1.5),
+        flierprops=dict(
+            markerfacecolor=climbSecondary, markeredgecolor=climbPrimary, markersize=5
+        ),
     )
+
     extend_boxplot_medians(auto_boxplot, scale=1.6)
     extend_boxplot_medians(tele_boxplot, scale=1.6)
     extend_boxplot_medians(climb_boxplot, scale=1.6)
@@ -155,10 +166,11 @@ def compare_team_scores(teams: list[TeamData], hidden_teams: list[int] = []):
     plt.ylabel("Scores")
     plt.title("Average Scores by Category")
     plt.ylabel("Average Score")
+    plt.grid(axis="y", linestyle="--", alpha=0.7)
     plt.legend(
         handles=[
-            Patch(facecolor=autoSecondary, edgecolor=autoPrimary, label="Auto Shots"),
-            Patch(facecolor=teleSecondary, edgecolor=telePrimary, label="Teleop Shots"),
+            Patch(facecolor=autoSecondary, edgecolor=autoPrimary, label="Auto"),
+            Patch(facecolor=teleSecondary, edgecolor=telePrimary, label="Teleop"),
             Patch(facecolor=climbSecondary, edgecolor=climbPrimary, label="Climb"),
         ]
     )

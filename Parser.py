@@ -363,7 +363,8 @@ def parse_folder(folder_name: str) -> dict[int, TeamData] | None:
     # Open folder within same directory as this script and find all .json files.
     data_folder = os.path.join(os.path.dirname(__file__), folder_name)
     if not os.path.exists(data_folder):
-        print(f"Data folder not found at {data_folder}")
+        os.makedirs(data_folder)
+        print(f"Data folder not found at {data_folder}. One was created.")
         return None
     json_files = [f for f in os.listdir(data_folder) if f.endswith(".json")]
     if not json_files:
