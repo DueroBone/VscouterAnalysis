@@ -1,4 +1,7 @@
 from enum import Enum
+import numpy as np
+
+sqrt_data = True
 
 
 class AutoEvent:
@@ -118,6 +121,7 @@ class PitData:
 
 
 class TeamData:
+
     def __init__(
         self, teamNum: int, pit_data: PitData | None, matches: list[MatchData] | None
     ):
@@ -130,48 +134,70 @@ class TeamData:
             raise Exception(f"No pit data for team {self.teamNum}")
         return self.pit_data.maxFuelStorage
 
-    def getTeleShots(self) -> list[list[int]]:
+    def getTeleShots(self) -> list[np.ndarray]:
         if self.matches is None:
-            return []
-        shots = []
-        for match in self.matches:
-            matchShots = []
-            for teleEvent in match.teleEvents:
+            return list[np.ndarray]()
+        shots: list[np.ndarray] = []
+        for i, match in enumerate(self.matches):
+            matchShots = np.zeros(len(match.teleEvents), dtype=float)
+            for j, teleEvent in enumerate(match.teleEvents):
                 if teleEvent.fuelSource in (
                     FuelSource.CENTER,
                     FuelSource.DEPOT,
                     FuelSource.RECIEVE_SHUTTLE,
                 ):  # if scoring shots
-                    matchShots.append(
-                        teleEvent.hopperPercent
-                        * teleEvent.shotsPercent
+                    if sqrt_data:
+                        matchShots[j] = (
+                            teleEvent.hopperPercent * teleEvent.shotsPercent
+                        ) ** 0.5 * self.getCapacity()  # type: ignore
+                    else:
+                        matchShots[j] = (
+                            teleEvent.hopperPercent
+                            * teleEvent.shotsPercent
+                            * self.getCapacity()  # type: ignore
+                        )
+            shots.append(matchShots)
+        return shots
+
+    def getAutoShots(self) -> list[np.ndarray]:
+        if self.matches is None:
+            return list[np.ndarray]()
+        shots: list[np.ndarray] = []
+        for i, match in enumerate(self.matches):
+            matchShots = np.zeros(len(match.autoEvents), dtype=float)
+            for j, autoEvent in enumerate(match.autoEvents):
+                if sqrt_data:
+                    matchShots[j] = float(
+                        (autoEvent.hopperPercent * autoEvent.shotsPercent) ** 0.5
+                        * self.getCapacity()
+                    )  # type: ignore
+                else:
+                    matchShots[j] = float(
+                        autoEvent.hopperPercent
+                        * autoEvent.shotsPercent
                         * self.getCapacity()  # type: ignore
                     )
             shots.append(matchShots)
         return shots
 
-    def getAutoShots(self) -> list[list[int]]:
-        if self.matches is None:
-            return []
-        shots = []
-        for match in self.matches:
-            matchShots = []
-            for autoEvent in match.autoEvents:
-                matchShots.append(
-                    autoEvent.hopperPercent
-                    * autoEvent.shotsPercent
-                    * self.getCapacity()  # type: ignore
-                )
-            shots.append(matchShots)
-        return shots
-
     def getAvgShots(self) -> tuple[float, float]:
         autoShots = self.getAutoShots()
-        totalAutoShots = sum(sum(match) for match in autoShots)
+        totalAutoShots = float(np.sum([np.sum(match) for match in autoShots]))
         numAutoMatches = len(autoShots)
         avgAutoShots = totalAutoShots / numAutoMatches if numAutoMatches > 0 else 0
         teleShots = self.getTeleShots()
-        totalTeleShots = sum(sum(match) for match in teleShots)
+        totalTeleShots = float(np.sum([np.sum(match) for match in teleShots]))
         numTeleMatches = len(teleShots)
         avgTeleShots = totalTeleShots / numTeleMatches if numTeleMatches > 0 else 0
         return avgAutoShots, avgTeleShots
+
+    def getClimbData(self) -> np.ndarray:
+        if self.matches is None:
+            return np.array([])
+        climbData = []
+        for match in self.matches:
+            if match.climb is not None:
+                climbData.append(self.pit_data.climbingAbility if self.pit_data else 0)  # type: ignore
+            else:
+                climbData.append(0)
+        return np.array(climbData, dtype=int)
