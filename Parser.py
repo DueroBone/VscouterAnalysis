@@ -327,7 +327,7 @@ def merge_team_data(
     return merged
 
 
-def remove_duplicates(matchData: list[MatchData]) -> list[MatchData]:
+def remove_duplicate_matches(matchData: list[MatchData]) -> list[MatchData]:
     seen = set()
     unique = []
     for match in matchData:
@@ -341,6 +341,21 @@ def remove_duplicates(matchData: list[MatchData]) -> list[MatchData]:
             unique.append(match)
     return unique
 
+
+def remove_duplicate_pits(pitData: list[PitData]) -> list[PitData]:
+    seen_teams = set()
+    unique = []
+    for pit in pitData:
+        if pit.teamNum in seen_teams:
+            continue
+        seen_teams.add(pit.teamNum)
+        unique.append(pit)
+    return unique
+
+
+def sort_team_data(teamData: dict[int, TeamData]) -> dict[int, TeamData]:
+    # Sort the team data by team number
+    return dict(sorted(teamData.items(), key=lambda item: item[0]))
 
 def parse_folder(folder_name: str) -> dict[int, TeamData] | None:
     # Open folder within same directory as this script and find all .json files.
@@ -367,11 +382,12 @@ def parse_folder(folder_name: str) -> dict[int, TeamData] | None:
             print(f"Error parsing {json_file}: {e}")
             return None
 
-    matches = remove_duplicates(match_data)
+    matches = remove_duplicate_matches(match_data)
+    pits = remove_duplicate_pits(pit_data)
     team_dict_result = team_dict(matches)
-    pit_dict_result = pit_dict(pit_data)
+    pit_dict_result = pit_dict(pits)
     team_data = merge_team_data(team_dict_result, pit_dict_result)
     print(
-        f"Successfully parsed {len(team_data)} teams from {len(matches)} matches and {len(pit_data)} pit entries across {len(json_files)} files."
+        f"Successfully parsed {len(team_data)} teams from {len(matches)} matches and {len(pits)} pit entries across {len(json_files)} files."
     )
-    return team_data
+    return sort_team_data(team_data)

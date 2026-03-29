@@ -124,3 +124,54 @@ class TeamData:
         self.teamNum = teamNum
         self.pit_data: PitData | None = pit_data
         self.matches: list[MatchData] | None = matches
+
+    def getCapacity(self) -> int | None:
+        if self.pit_data is None:
+            raise Exception(f"No pit data for team {self.teamNum}")
+        return self.pit_data.maxFuelStorage
+
+    def getTeleShots(self) -> list[list[int]]:
+        if self.matches is None:
+            return []
+        shots = []
+        for match in self.matches:
+            matchShots = []
+            for teleEvent in match.teleEvents:
+                if teleEvent.fuelSource in (
+                    FuelSource.CENTER,
+                    FuelSource.DEPOT,
+                    FuelSource.RECIEVE_SHUTTLE,
+                ):  # if scoring shots
+                    matchShots.append(
+                        teleEvent.hopperPercent
+                        * teleEvent.shotsPercent
+                        * self.getCapacity()  # type: ignore
+                    )
+            shots.append(matchShots)
+        return shots
+
+    def getAutoShots(self) -> list[list[int]]:
+        if self.matches is None:
+            return []
+        shots = []
+        for match in self.matches:
+            matchShots = []
+            for autoEvent in match.autoEvents:
+                matchShots.append(
+                    autoEvent.hopperPercent
+                    * autoEvent.shotsPercent
+                    * self.getCapacity()  # type: ignore
+                )
+            shots.append(matchShots)
+        return shots
+
+    def getAvgShots(self) -> tuple[float, float]:
+        autoShots = self.getAutoShots()
+        totalAutoShots = sum(sum(match) for match in autoShots)
+        numAutoMatches = len(autoShots)
+        avgAutoShots = totalAutoShots / numAutoMatches if numAutoMatches > 0 else 0
+        teleShots = self.getTeleShots()
+        totalTeleShots = sum(sum(match) for match in teleShots)
+        numTeleMatches = len(teleShots)
+        avgTeleShots = totalTeleShots / numTeleMatches if numTeleMatches > 0 else 0
+        return avgAutoShots, avgTeleShots
