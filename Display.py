@@ -90,15 +90,24 @@ def compare_team_scores(teams: list[TeamData], hidden_teams: list[int] = []):
             autoShots_data.append(sum_inner_lists(team.getAutoShots()))
             climb_data.append(team.getClimbData())
 
-    """
     # Calculate average shots and climbs per team
     avg_teleShots = []
     avg_autoShots = []
     avg_climbs = []  # 10 points per level
     for i in range(len(team_nums)):
         # sum each inner list then average
-        avg_teleShots.append(np.mean([np.sum(match) for match in teleShots_data[i]]))
-        avg_autoShots.append(np.mean([np.sum(match) for match in autoShots_data[i]]))
+        avg_teleShots.append(
+            np.sum([np.sum(match) for match in teleShots_data[i]])
+            / len(teleShots_data[i])
+            if len(teleShots_data[i]) > 0
+            else 0
+        )
+        avg_autoShots.append(
+            np.sum([np.sum(match) for match in autoShots_data[i]])
+            / len(autoShots_data[i])
+            if len(autoShots_data[i]) > 0
+            else 0
+        )
         avg_climbs.append(
             (np.sum(climb_data[i]) * 10) / len(climb_data[i])
             if climb_data[i].size > 0
@@ -110,14 +119,13 @@ def compare_team_scores(teams: list[TeamData], hidden_teams: list[int] = []):
 
     # Sort teams by mean total score
     sorted_data = sorted(
-        zip(team_nums, avg_autoShots, avg_teleShots, avg_climbs, total_scores),
-        key=lambda x: x[4],
+        zip(total_scores, team_nums, teleShots_data, autoShots_data, climb_data),
+        key=lambda x: x[0],
         reverse=True,
     )
-    team_nums, avg_autoShots, avg_teleShots, avg_climbs, total_scores = zip(
+    total_scores, team_nums, teleShots_data, autoShots_data, climb_data = zip(
         *sorted_data
     )
-    """
 
     # Box plots per team
     plt.figure(figsize=(10, 5))
@@ -164,8 +172,8 @@ def compare_team_scores(teams: list[TeamData], hidden_teams: list[int] = []):
     extend_boxplot_medians(climb_boxplot, scale=1.6)
     plt.xlabel("Team Number")
     plt.ylabel("Scores")
-    plt.title("Average Scores by Category")
-    plt.ylabel("Average Score")
+    plt.title("Team Scores by Category")
+    plt.ylabel("Scores")
     plt.grid(axis="y", linestyle="--", alpha=0.7)
     plt.legend(
         handles=[
@@ -174,6 +182,45 @@ def compare_team_scores(teams: list[TeamData], hidden_teams: list[int] = []):
             Patch(facecolor=climbSecondary, edgecolor=climbPrimary, label="Climb"),
         ]
     )
+    plt.tight_layout()
+    plt.show()
+
+
+def show_team_data(team: TeamData):
+    # TODO: add subplots for other data like fuel source breakdowns, climb levels, etc.
+    autoShots = sum_inner_lists(team.getAutoShots())
+    teleShots = sum_inner_lists(team.getTeleShots())
+    climbs = team.getClimbData()
+
+    plt.figure(figsize=(10, 5))
+    plt.plot(autoShots, label="Auto Shots", color=autoPrimary, marker="o")
+    plt.plot(teleShots, label="Teleop Shots", color=telePrimary, marker="o")
+    plt.plot(climbs, label="Climb Data", color=climbPrimary, marker="o")
+
+    plt.axhline(
+        np.mean(autoShots),  # type: ignore
+        color=autoPrimary,
+        linestyle="--",
+        label="Auto Avg",
+    )
+    plt.axhline(
+        np.mean(teleShots),  # type: ignore
+        color=telePrimary,
+        linestyle="--",
+        label="Teleop Avg",
+    )
+    plt.axhline(
+        np.mean(climbs),  # type: ignore
+        color=climbPrimary,
+        linestyle="--",
+        label="Climb Avg",
+    )
+
+    plt.xlabel("Match Index")
+    plt.ylabel("Scores")
+    plt.title(f"Detailed Data for Team {team.teamNum}")
+    plt.grid(True)
+    plt.legend()
     plt.tight_layout()
     plt.show()
 

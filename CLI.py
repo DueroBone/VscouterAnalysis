@@ -15,6 +15,7 @@ def clear_screen():
 def print_menu():
     print("Menu:")
     print("1. Compare Team Scores")
+    print("2. Deep info on a team")
     print("9. Exit")
     print("0. Hide/Unhide Team")
 
@@ -26,6 +27,16 @@ def select_menu(selection: int):
             clear_screen()
             print("Close the graph to return to the menu.")
             dp.compare_team_scores(list(match_data.values()), hidden_teams)
+        
+        if selection == 2:
+            team_num = int(input("Enter team number: "))
+            if team_num in match_data:
+                clear_screen()
+                print(f"Showing data for team {team_num}. Close the graph to return to the menu.")
+                dp.show_team_data(match_data[team_num])
+            else:
+                print(f"Team number {team_num} not found. Please try again.")
+                sleep(1)
 
         elif selection == 0:
             toggle_teams()
