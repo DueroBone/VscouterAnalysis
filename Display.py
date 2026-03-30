@@ -1,8 +1,12 @@
 import matplotlib.pyplot as plt
 from matplotlib.patches import Patch
-from Classes import TeamData
+from Classes import TeamData, FuelSource
+import Classes
 import main
 import numpy as np
+import base64
+from io import BytesIO
+from PIL import Image
 
 
 autoPrimary = "red"
@@ -187,16 +191,38 @@ def compare_team_scores(teams: list[TeamData], hidden_teams: list[int] = []):
 
 
 def show_team_data(team: TeamData):
-    # TODO: add subplots for other data like fuel source breakdowns, climb levels, etc.
+    plt.figure(figsize=(12, 10))
+
     autoShots = sum_inner_lists(team.getAutoShots())
     teleShots = sum_inner_lists(team.getTeleShots())
     climbs = team.getClimbData()
+    if team.matches is not None:
+        matches = [str(num.matchNumber) for num in team.matches if num.matchNumber]
+    else:
+        matches = []
 
-    plt.figure(figsize=(10, 5))
-    plt.plot(autoShots, label="Auto Shots", color=autoPrimary, marker="o")
-    plt.plot(teleShots, label="Teleop Shots", color=telePrimary, marker="o")
-    plt.plot(climbs, label="Climb Data", color=climbPrimary, marker="o")
-
+    # Top graph, scores per match
+    plt.subplot(2, 1, 1)
+    max_score = max(
+        max(autoShots) if autoShots else 0,
+        max(teleShots) if teleShots else 0,
+        max(climbs) if climbs.size > 0 else 0,
+    )
+    breakdown_time = [match.broken for match in team.matches or []]
+    # Shortly = 0.2, A Lot = 0.5, Whole Match = 1, None = 0
+    breakdown_time = [
+        (
+            0.2
+            if x == "Shortly"
+            else 0.5 if x == "A Lot" else 1 if x == "Whole Match" else 0
+        )
+        for x in breakdown_time
+    ]
+    breakdown_time = [x * max_score for x in breakdown_time]
+    plt.plot(matches, autoShots, label="Auto", color=autoPrimary, marker="o")
+    plt.plot(matches, teleShots, label="Teleop", color=telePrimary, marker="o")
+    plt.plot(matches, climbs, label="Climb", color=climbPrimary, marker="o")
+    plt.bar(matches, breakdown_time, label="Breakdown Time", color="orange", alpha=0.3)
     plt.axhline(
         np.mean(autoShots),  # type: ignore
         color=autoPrimary,
@@ -215,12 +241,150 @@ def show_team_data(team: TeamData):
         linestyle="--",
         label="Climb Avg",
     )
-
-    plt.xlabel("Match Index")
+    plt.xlabel("Match number")
     plt.ylabel("Scores")
-    plt.title(f"Detailed Data for Team {team.teamNum}")
+    plt.title(f"Detailed data for team {team.teamNum}")
     plt.grid(True)
     plt.legend()
+
+    # Bottom left-top graph, fuel source breakdown
+    plt.subplot(4, 3, 7)
+    colors = ["orange", "purple", "cyan"]
+    fuel_sources = ["Center", "Shuttle", "Received Shuttle"]
+    fuel_counts: list[list[float]] = [[], [], []]
+    exp = Classes.sqrt_data and 0.5 or 1  # Accounts better for high scoring
+    for match in team.matches or []:
+        fuel_counts[0].append(0)
+        fuel_counts[1].append(0)
+        fuel_counts[2].append(0)
+        for teleEvent in match.teleEvents:
+            if teleEvent.fuelSource == FuelSource.CENTER:
+                fuel_counts[0][-1] += teleEvent.hopperPercent**exp * team.getCapacity()  # type: ignore
+            elif teleEvent.fuelSource == FuelSource.CENTER_SHUTTLE:
+                fuel_counts[1][-1] += teleEvent.hopperPercent**exp * team.getCapacity()  # type: ignore
+            elif teleEvent.fuelSource == FuelSource.RECIEVE_SHUTTLE:
+                fuel_counts[2][-1] += teleEvent.hopperPercent**exp * team.getCapacity()  # type: ignore
+    plt.title("Weighted Fuel Sources")
+    plt.pie(
+        sum_inner_lists(fuel_counts),
+        colors=colors,
+        explode=[0.05] * 3,
+        labels=fuel_sources,
+        autopct="%1.1f%%",
+    )
+    # plt.legend(labels=fuel_sources)
+    plt.grid(axis="y")
+
+    # Bottom left-bottom graph, fuel source per match
+    plt.subplot(4, 3, 10)
+    bottom = np.zeros(len(matches))
+    for i in range(len(fuel_sources)):
+        plt.bar(
+            matches,
+            fuel_counts[i],
+            bottom=bottom,
+            label=fuel_sources[i],
+            color=colors[i],
+        )
+        bottom += np.array(fuel_counts[i])
+    plt.xlabel("Match number")
+    plt.legend()
+    plt.grid(axis="y")
+
+    # Bottom middle graph, pit data
+    plt.subplot(2, 3, 5)
+    if team.pit_data:
+        plt.text(
+            0.5,
+            0.9,
+            f"Max Fuel Storage: {team.pit_data.maxFuelStorage}",
+            ha="center",
+            va="center",
+        )
+        plt.text(
+            0.5,
+            0.8,
+            f"Drivetrain: {team.pit_data.drivetrainType.value}",
+            ha="center",
+            va="center",
+        )
+        plt.text(
+            0.5,
+            0.7,
+            f"Turreting Shooter: {team.pit_data.rotatableShooter}",
+            ha="center",
+            va="center",
+        )
+        plt.text(
+            0.5,
+            0.6,
+            f"Trench Drive Ability: {team.pit_data.trenchDriveAbility}",
+            ha="center",
+            va="center",
+        )
+        plt.text(
+            0.5,
+            0.4,
+            f"Climbing Ability: Level {team.pit_data.climbingAbility}",
+            ha="center",
+            va="center",
+        )
+        plt.text(
+            0.5,
+            0.3,
+            f"Intake from Depot: {team.pit_data.intakeFromDepot}",
+            ha="center",
+            va="center",
+        )
+        plt.text(
+            0.5,
+            0.2,
+            f"Intake from Outpost: {team.pit_data.intakeFromOutpost}",
+            ha="center",
+            va="center",
+        )
+        plt.text(
+            0.5,
+            0.1,
+            f"Weight: {int(team.pit_data.weight)} lbs",
+            ha="center",
+            va="center",
+        )
+        if team.matches:
+            climbs = [
+                match.climb.timeSeconds
+                for match in team.matches
+                if match.climb
+            ]
+            plt.text(
+                0.5,
+                0,
+                f"Avg climb: {np.mean(climbs) if climbs else 'N/A'} seconds",
+                ha="center",
+                va="center",
+            )
+    else:
+        plt.text(0.5, 0.5, "No pit data available", ha="center", va="center")
+    plt.axis("off")
+    plt.title("Pit Data")
+
+    # Bottom right img of robot
+    plt.subplot(2, 3, 6)
+    if team.pit_data and team.pit_data.image:
+        try:
+            img_data = base64.b64decode(team.pit_data.image.split(",")[1])
+            img = Image.open(BytesIO(img_data))
+            plt.imshow(img)
+            plt.axis("off")
+            plt.title("Robot Image")
+        except Exception as e:
+            print(f"Error loading image for team {team.teamNum}: {e}")
+            plt.text(0.5, 0.5, "An error has occurred", ha="center", va="center")
+            plt.axis("off")
+    else:
+        plt.text(0.5, 0.5, "No image available", ha="center", va="center")
+        plt.axis("off")
+
     plt.tight_layout()
     plt.show()
 

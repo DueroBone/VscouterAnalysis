@@ -24,7 +24,7 @@ class FuelSource(Enum):
     CENTER = "Center Pick Up"
     CENTER_SHUTTLE = "Center Shuttle"
     RECIEVE_SHUTTLE = "Received Shuttle"
-    DEPOT = "Depot or Outpost"
+    # DEPOT = "Depot or Outpost"
 
 
 class TeleEvent:
@@ -143,7 +143,7 @@ class TeamData:
             for j, teleEvent in enumerate(match.teleEvents):
                 if teleEvent.fuelSource in (
                     FuelSource.CENTER,
-                    FuelSource.DEPOT,
+                    # FuelSource.DEPOT,
                     FuelSource.RECIEVE_SHUTTLE,
                 ):  # if scoring shots
                     if sqrt_data:

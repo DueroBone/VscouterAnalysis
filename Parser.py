@@ -94,7 +94,9 @@ def _parse_fuel_source(value) -> FuelSource:
     for fuel_source in FuelSource:
         if fuel_source.value == text:
             return fuel_source
-    return FuelSource.DEPOT
+    if text == "Depot or Outpost":
+        return FuelSource.RECIEVE_SHUTTLE
+    return FuelSource.RECIEVE_SHUTTLE
 
 
 def _parse_drive_train_type(value) -> DriveTrainType:
