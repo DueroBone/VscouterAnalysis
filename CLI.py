@@ -15,27 +15,29 @@ def clear_screen():
 
 def print_menu():
     print("Menu:")
-    print("1. Compare Team Scores")
-    print("2. Deep info on a team")
-    print("9. Exit")
-    print("0. Hide/Unhide Team")
+    print("1. Hide/Unhide Team")
+    print("2. Compare Team Scores")
+    print("3. Deep info on a team")
+    print("0. Exit")
 
 
 def select_menu(selection: int):
     global hidden_teams, match_data
     try:
-        if selection == 1:  # Compare team scores
+
+        if selection == 1:  # Hide/Unhide Team
+            toggle_teams()
+
+        elif selection == 2:  # Compare team scores
             clear_screen()
             print("Close the graph to return to the menu.")
             dp.compare_team_scores(list(match_data.values()), hidden_teams)
+            # sleep(1)
 
-        if selection == 2:  # Deep info on a team
+        elif selection == 3:  # Deep info on a team
             team_info()
 
-        elif selection == 0:  # Hide/Unhide Team
-            toggle_teams()
-
-        elif selection == 9:  # Exit
+        elif selection == 0:  # Exit
             print("Exiting...")
             exit(0)
 
@@ -66,7 +68,7 @@ def team_info():
             f"Showing data for team {team_num}. Close the graph to return to the menu."
         )
         team_data = match_data[team_num]
-        if team_data.pit_data is not None:
+        if team_data.pit_data is not None and False:
             # team_data.pit_data.
             print(f"Max Fuel Storage: {team_data.pit_data.maxFuelStorage}")
             print(f"Drivetrain: {team_data.pit_data.drivetrainType.value}")
@@ -111,11 +113,19 @@ def toggle_teams():
                     print(teamstr(list(match_data.keys())[i]), end="    ")
                 i += 1
             print()
-        print("Enter team number to toggle visibility (or enter to finish): ", end="")
+        print("Enter team number to toggle visibility, 0 to toggle all (or none to finish): ", end="")
         inp = input()
         clear_screen()
-        if inp == "":
+        if inp == "" or inp.lower() == "none":
             break
+        if inp == "0":
+            if len(hidden_teams) > 0:
+                hidden_teams = []
+                print("All teams are now visible.")
+            else:
+                hidden_teams = list(match_data.keys())
+                print("All teams are now hidden.")
+            continue
         try:
             team_num = int(inp)
             if team_num in match_data:

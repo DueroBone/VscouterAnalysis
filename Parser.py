@@ -1,6 +1,8 @@
 import json
 from Classes import *
 import os
+import re
+from datetime import datetime
 import main
 
 
@@ -174,14 +176,14 @@ def _parse_pit_row(row: list, col_index: dict[str, int]) -> PitData:
 
 def _parse_climb(value) -> Climb:
     if not isinstance(value, dict):
-        return Climb(position="", timeSeconds=0.0, failed=False)
+        return Climb(position="", timeSeconds=0, failed=False)
 
     position_value = value.get("position")
     time_seconds_value = value.get("timeSeconds")
     failed_value = value.get("failed")
 
     position = str(position_value) if position_value is not None else ""
-    time_seconds = _parse_number(time_seconds_value)
+    time_seconds = _parse_int(time_seconds_value)
     failed = _parse_bool(failed_value)
 
     return Climb(position=position, timeSeconds=time_seconds, failed=failed)
@@ -211,11 +213,11 @@ def _parse_match_row(row: list, col_index: dict[str, int]) -> MatchData:
         return row[idx]
 
     climb_position = str(v("climbPosition", "")).strip()
-    climb_time = _parse_number(v("climbTimeSeconds"))
+    climb_time = _parse_int(v("climbTimeSeconds"))
     climb_failed = _parse_bool(v("climbFailed"))
 
     climb_data: Climb | None = None
-    if climb_position or climb_time > 0.0 or climb_failed:
+    if climb_position or climb_time > 0 or climb_failed:
         climb_data = _parse_climb(
             {
                 "position": climb_position,
@@ -361,6 +363,20 @@ def sort_team_data(teamData: dict[int, TeamData]) -> dict[int, TeamData]:
     return dict(sorted(teamData.items(), key=lambda item: item[0]))
 
 
+_TIMESTAMP_PATTERN = re.compile(r"(\d{4}-\d{2}-\d{2}-\d{2}_\d{2}_\d{2}_\d{3})")
+
+
+def _file_timestamp_key(filename: str) -> tuple[int, datetime]:
+    match = _TIMESTAMP_PATTERN.search(filename)
+    if not match:
+        return (0, datetime.min)
+
+    try:
+        return (1, datetime.strptime(match.group(1), "%Y-%m-%d-%H_%M_%S_%f"))
+    except ValueError:
+        return (0, datetime.min)
+
+
 def parse_folder(folder_name: str) -> dict[int, TeamData] | None:
     # Open folder within same directory as this script and find all .json files.
     data_folder = os.path.join(os.path.dirname(__file__), folder_name)
@@ -369,6 +385,8 @@ def parse_folder(folder_name: str) -> dict[int, TeamData] | None:
         print(f"Data folder not found at {data_folder}. One was created.")
         return None
     json_files = [f for f in os.listdir(data_folder) if f.endswith(".json")]
+    # Process newest timestamped files first so duplicate removal keeps latest entries.
+    json_files.sort(key=_file_timestamp_key, reverse=True)
     if not json_files:
         print(f"No .json files found in {data_folder}")
         return None

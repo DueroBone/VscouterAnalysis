@@ -222,7 +222,14 @@ def show_team_data(team: TeamData):
     plt.plot(matches, autoShots, label="Auto", color=autoPrimary, marker="o")
     plt.plot(matches, teleShots, label="Teleop", color=telePrimary, marker="o")
     plt.plot(matches, climbs, label="Climb", color=climbPrimary, marker="o")
-    plt.bar(matches, breakdown_time, label="Breakdown Time", color="orange", alpha=0.3)
+    plt.bar(
+        matches,
+        breakdown_time,
+        label="Breakdown Time",
+        color="#ff6600",
+        alpha=0.3,
+        width=1,
+    )
     plt.axhline(
         np.mean(autoShots),  # type: ignore
         color=autoPrimary,
@@ -252,28 +259,32 @@ def show_team_data(team: TeamData):
     colors = ["orange", "purple", "cyan"]
     fuel_sources = ["Center", "Shuttle", "Received Shuttle"]
     fuel_counts: list[list[float]] = [[], [], []]
-    exp = Classes.sqrt_data and 0.5 or 1  # Accounts better for high scoring
-    for match in team.matches or []:
-        fuel_counts[0].append(0)
-        fuel_counts[1].append(0)
-        fuel_counts[2].append(0)
-        for teleEvent in match.teleEvents:
-            if teleEvent.fuelSource == FuelSource.CENTER:
-                fuel_counts[0][-1] += teleEvent.hopperPercent**exp * team.getCapacity()  # type: ignore
-            elif teleEvent.fuelSource == FuelSource.CENTER_SHUTTLE:
-                fuel_counts[1][-1] += teleEvent.hopperPercent**exp * team.getCapacity()  # type: ignore
-            elif teleEvent.fuelSource == FuelSource.RECIEVE_SHUTTLE:
-                fuel_counts[2][-1] += teleEvent.hopperPercent**exp * team.getCapacity()  # type: ignore
-    plt.title("Weighted Fuel Sources")
-    plt.pie(
-        sum_inner_lists(fuel_counts),
-        colors=colors,
-        explode=[0.05] * 3,
-        labels=fuel_sources,
-        autopct="%1.1f%%",
-    )
-    # plt.legend(labels=fuel_sources)
-    plt.grid(axis="y")
+    try:
+        exp = Classes.sqrt_data and 0.5 or 1  # Accounts better for high scoring
+        for match in team.matches or []:
+            fuel_counts[0].append(0)
+            fuel_counts[1].append(0)
+            fuel_counts[2].append(0)
+            for teleEvent in match.teleEvents:
+                if teleEvent.fuelSource == FuelSource.CENTER:
+                    fuel_counts[0][-1] += teleEvent.hopperPercent**exp * team.getCapacity()  # type: ignore
+                elif teleEvent.fuelSource == FuelSource.CENTER_SHUTTLE:
+                    fuel_counts[1][-1] += teleEvent.hopperPercent**exp * team.getCapacity()  # type: ignore
+                elif teleEvent.fuelSource == FuelSource.RECIEVE_SHUTTLE:
+                    fuel_counts[2][-1] += teleEvent.hopperPercent**exp * team.getCapacity()  # type: ignore
+        plt.title("Weighted Fuel Sources")
+        plt.pie(
+            sum_inner_lists(fuel_counts),
+            colors=colors,
+            explode=[0.05] * 3,
+            labels=fuel_sources,
+            autopct="%1.1f%%",
+        )
+        # plt.legend(labels=fuel_sources)
+        plt.grid(axis="y")
+    except Exception as e:
+        plt.text(0.5, 0.5, "An error has occurred", ha="center", va="center")
+        plt.axis("off")
 
     # Bottom left-bottom graph, fuel source per match
     plt.subplot(4, 3, 10)
@@ -324,41 +335,37 @@ def show_team_data(team: TeamData):
         )
         plt.text(
             0.5,
-            0.4,
+            0.45,
             f"Climbing Ability: Level {team.pit_data.climbingAbility}",
             ha="center",
             va="center",
         )
         plt.text(
             0.5,
-            0.3,
+            0.35,
             f"Intake from Depot: {team.pit_data.intakeFromDepot}",
             ha="center",
             va="center",
         )
         plt.text(
             0.5,
-            0.2,
+            0.25,
             f"Intake from Outpost: {team.pit_data.intakeFromOutpost}",
             ha="center",
             va="center",
         )
         plt.text(
             0.5,
-            0.1,
+            0.15,
             f"Weight: {int(team.pit_data.weight)} lbs",
             ha="center",
             va="center",
         )
         if team.matches:
-            climbs = [
-                match.climb.timeSeconds
-                for match in team.matches
-                if match.climb
-            ]
+            climbs = [match.climb.timeSeconds for match in team.matches if match.climb]
             plt.text(
                 0.5,
-                0,
+                0.05,
                 f"Avg climb: {np.mean(climbs) if climbs else 'N/A'} seconds",
                 ha="center",
                 va="center",
@@ -368,8 +375,8 @@ def show_team_data(team: TeamData):
     plt.axis("off")
     plt.title("Pit Data")
 
-    # Bottom right img of robot
-    plt.subplot(2, 3, 6)
+    # Bottom right-top graph, img of robot
+    plt.subplot(4, 3, 9)
     if team.pit_data and team.pit_data.image:
         try:
             img_data = base64.b64decode(team.pit_data.image.split(",")[1])
@@ -385,7 +392,47 @@ def show_team_data(team: TeamData):
         plt.text(0.5, 0.5, "No image available", ha="center", va="center")
         plt.axis("off")
 
+    # Bottom right-bottom graph, clumb positions and success
+    plt.subplot(4, 3, 12)
+    # Exploded pie chart of climb positions
+    # Fade from green to red based on success rate
+    climb_positions = ["depot", "outpost", "middle"]
+    position_counts = {
+        pos: [0, 0, 0] for pos in climb_positions
+    }  # success, total, time
+    for match in team.matches or []:
+        if match.climb:
+            pos = match.climb.position
+            if pos in climb_positions:
+                position_counts[pos][1] += 1
+                position_counts[pos][2] += match.climb.timeSeconds or 0
+                if not match.climb.failed:
+                    position_counts[pos][0] += 1
+    if sum(position_counts[pos][1] for pos in climb_positions) == 0:
+        plt.text(0.5, 0.5, "No climb data available", ha="center", va="center")
+    else:
+        colors = []
+        for pos in climb_positions:
+            success_rate = (
+                position_counts[pos][0] / position_counts[pos][1]
+                if position_counts[pos][1] > 0
+                else 0
+            )
+            colors.append((1 - success_rate, success_rate, 0))  # red to green
+        plt.pie(
+            [position_counts[pos][1] for pos in climb_positions],
+            labels=climb_positions,
+            autopct=lambda p: f"{p:.1f}%\n({int(p * sum(position_counts[pos][1] for pos in climb_positions) / 100)})",
+            colors=colors,
+            explode=[0.05] * len(climb_positions),
+        )
+    plt.axis("off")
+    plt.title("Climb Positions and Success Rates")
+
     plt.tight_layout()
+    plt.subplots_adjust(
+        left=0.05, right=0.99, top=0.99, bottom=0.05, wspace=0, hspace=0.2
+    )
     plt.show()
 
 

@@ -42,7 +42,7 @@ class TeleEvent:
 
 
 class Climb:
-    def __init__(self, position: str, timeSeconds: float, failed: bool):
+    def __init__(self, position: str, timeSeconds: int, failed: bool):
         self.position = position
         self.timeSeconds = timeSeconds
         self.failed = failed
@@ -166,17 +166,23 @@ class TeamData:
         for i, match in enumerate(self.matches):
             matchShots = np.zeros(len(match.autoEvents), dtype=float)
             for j, autoEvent in enumerate(match.autoEvents):
-                if sqrt_data:
-                    matchShots[j] = float(
-                        (autoEvent.hopperPercent * autoEvent.shotsPercent) ** 0.5
-                        * self.getCapacity()
-                    )  # type: ignore
-                else:
-                    matchShots[j] = float(
-                        autoEvent.hopperPercent
-                        * autoEvent.shotsPercent
-                        * self.getCapacity()  # type: ignore
+                try:
+                    if sqrt_data:
+                        matchShots[j] = float(
+                            (autoEvent.hopperPercent * autoEvent.shotsPercent) ** 0.5
+                            * self.getCapacity()
+                        )  # type: ignore
+                    else:
+                        matchShots[j] = float(
+                            autoEvent.hopperPercent
+                            * autoEvent.shotsPercent
+                            * self.getCapacity()  # type: ignore
+                        )
+                except Exception as e:
+                    print(
+                        f"Error calculating auto shots for team {self.teamNum} in match {match.matchNumber}: {e}"
                     )
+                    matchShots[j] = 0
             shots.append(matchShots)
         return shots
 
