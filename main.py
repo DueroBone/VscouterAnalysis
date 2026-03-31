@@ -7,7 +7,6 @@ def main():
     if match_data is None:
         raise Exception("No match data parsed.")
     CLI.run_cli(match_data)
-    pass
 
 
 if __name__ == "__main__":

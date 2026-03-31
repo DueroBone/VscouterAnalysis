@@ -26,6 +26,10 @@ class FuelSource(Enum):
     RECIEVE_SHUTTLE = "Received Shuttle"
     # DEPOT = "Depot or Outpost"
 
+    # Depot is interpreted as recieved shuttle, as a
+    # large number of balls are piled under driver stations
+    # and it can be hard to differentiate between the two.
+
 
 class TeleEvent:
     def __init__(
@@ -106,6 +110,7 @@ class PitData:
         intakeFromDepot: bool,
         intakeFromOutpost: bool,
         image: str | None,
+        # base64 encoded webp image string, or None if no image was provided
     ):
         self.teamNum = teamNum
         self.scouterInitials = scouterInitials
@@ -121,7 +126,6 @@ class PitData:
 
 
 class TeamData:
-
     def __init__(
         self, teamNum: int, pit_data: PitData | None, matches: list[MatchData] | None
     ):
@@ -130,11 +134,13 @@ class TeamData:
         self.matches: list[MatchData] | None = matches
 
     def getCapacity(self) -> int | None:
+        """Returns the maximum fuel storage capacity of the robot, as reported in the pit data."""
         if self.pit_data is None:
             raise Exception(f"No pit data for team {self.teamNum}")
         return self.pit_data.maxFuelStorage
 
     def getTeleShots(self) -> list[np.ndarray]:
+        """Returns a list of numpy arrays, where each array contains the number of shots scored in each teleop event (shot) for a match."""
         if self.matches is None:
             return list[np.ndarray]()
         shots: list[np.ndarray] = []
@@ -160,6 +166,7 @@ class TeamData:
         return shots
 
     def getAutoShots(self) -> list[np.ndarray]:
+        """Returns a list of numpy arrays, where each array contains the number of shots scored in each autonomous event (shot) for a match."""
         if self.matches is None:
             return list[np.ndarray]()
         shots: list[np.ndarray] = []
@@ -187,6 +194,7 @@ class TeamData:
         return shots
 
     def getAvgShots(self) -> tuple[float, float]:
+        """Returns a tuple containing the average number of shots scored in autonomous and teleop, respectively."""
         autoShots = self.getAutoShots()
         totalAutoShots = float(np.sum([np.sum(match) for match in autoShots]))
         numAutoMatches = len(autoShots)
@@ -198,6 +206,9 @@ class TeamData:
         return avgAutoShots, avgTeleShots
 
     def getClimbData(self) -> np.ndarray:
+        """Returns a numpy array containing the climbing height for each match.
+        Vscouter does not differentiate between different levels of climb, so this is just the maximum climb height.
+        """
         if self.matches is None:
             return np.array([])
         climbData = []

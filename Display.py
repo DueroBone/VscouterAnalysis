@@ -22,6 +22,7 @@ def sum_inner_lists(data) -> list[float]:
 
 
 def extend_boxplot_medians(boxplot: dict, scale: float = 1.5):
+    # Make median line of boxplots wider to see easier
     for median in boxplot["medians"]:
         x0, x1 = median.get_xdata()
         center = (x0 + x1) / 2
@@ -81,6 +82,7 @@ def compare_team_scores_old(teams: list[TeamData], hidden_teams: list[int] = [])
 
 
 def compare_team_scores(teams: list[TeamData], hidden_teams: list[int] = []):
+    # Box plots per team and category, sorted by mean total score (auto + teleop + climb)
     print(f"Hidden teams: {hidden_teams}")
     team_nums = []
     teleShots_data = []
@@ -394,8 +396,6 @@ def show_team_data(team: TeamData):
 
     # Bottom right-bottom graph, clumb positions and success
     plt.subplot(4, 3, 12)
-    # Exploded pie chart of climb positions
-    # Fade from green to red based on success rate
     climb_positions = ["depot", "outpost", "middle"]
     position_counts = {
         pos: [0, 0, 0] for pos in climb_positions

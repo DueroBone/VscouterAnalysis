@@ -7,7 +7,7 @@ import main
 
 
 # Yes, this file is vibe coded so it over-analyzes the edge cases.
-# It could easily be a quarter of the complexity with correct assumptions.
+# It could easily be a quarter of the complexity with some assumptions.
 
 
 def _parse_percent(value) -> float:
