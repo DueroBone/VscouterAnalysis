@@ -10,6 +10,12 @@ Install dependencies:
 
     pip install -r requirements.txt
 
+If there is an error about pip not being found, create a virtual environment and install the dependencies there:
+
+    python -m venv venv
+    source venv/bin/activate  # On Windows, use `venv\Scripts\activate`
+    pip install -r requirements.txt
+
 ## To Run
 
 When the scouting app(s) is done scouting, dump the data and transfer all of the json files in the Data folder. Then, run the program.
@@ -37,10 +43,11 @@ With duplicates, the most recent file will be used.
 
 ## Scoring and Visualization Notes
 
-- Auto and teleop values are derived from event percentages and team fuel capacity from pit data.
+- Team comparison uses box plots by category and includes color-coded legends.
+- Auto and teleop values are derived from vague percentages and team fuel capacity from pit data. Take scores with a grain of salt.
+- In Classes.py you can disable square rooting of the input percentages, which account for higher scoring teams better. Example: 50% full \* 80% accurate = 40% vs sqrt(50% \* 80%) = 63%.
 - Climb contribution is derived from climb ability and successful climb entries.
 Vscouter does not track individual climb attempts, just location and success.
-- Team comparison uses box plots by category and includes color-coded legends.
 
 ## Issues
 

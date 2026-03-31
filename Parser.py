@@ -6,6 +6,10 @@ from datetime import datetime
 import main
 
 
+# Yes, this file is vibe coded so it over-analyzes the edge cases.
+# It could easily be a quarter of the complexity with correct assumptions.
+
+
 def _parse_percent(value) -> float:
     if value is None or value == "":
         return 0.0
