@@ -136,7 +136,8 @@ class TeamData:
     def getCapacity(self) -> int | None:
         """Returns the maximum fuel storage capacity of the robot, as reported in the pit data."""
         if self.pit_data is None:
-            raise Exception(f"No pit data for team {self.teamNum}")
+            # raise Exception(f"No pit data for team {self.teamNum}")
+            return 0
         return self.pit_data.maxFuelStorage
 
     def getTeleShots(self) -> list[np.ndarray]:

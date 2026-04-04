@@ -31,56 +31,7 @@ def extend_boxplot_medians(boxplot: dict, scale: float = 1.5):
         median.set_xdata([center - new_half_width, center + new_half_width])
 
 
-def compare_team_scores_old(teams: list[TeamData], hidden_teams: list[int] = []):
-    print(f"Hidden teams: {hidden_teams}")
-    team_nums = [
-        str(team.teamNum) for team in teams if team.teamNum not in hidden_teams
-    ]
-    shots_data = [
-        team.getAvgShots() if team.pit_data else (0, 0)
-        for team in teams
-        if team.teamNum not in hidden_teams
-    ]
-    climb_data = [
-        team.getClimbData() if team.pit_data else [0]
-        for team in teams
-        if team.teamNum not in hidden_teams
-    ]
-
-    shotsAuto = [shots[0] for shots in shots_data]
-    shotsTeleop = [shots[1] for shots in shots_data]
-    climbs = [
-        (sum(climb) * 10) / len(climb) if climb else 0 for climb in climb_data
-    ]  # 10 points per level
-
-    # Sort teams by total shots (auto + teleop)
-    total_shots = [s1 + s2 + c for s1, s2, c in zip(shotsAuto, shotsTeleop, climbs)]
-    sorted_data = sorted(
-        zip(team_nums, shotsAuto, shotsTeleop, climbs, total_shots),
-        key=lambda x: x[4],
-        reverse=True,
-    )
-    team_nums, shotsAuto, shotsTeleop, climbs, total_shots = zip(*sorted_data)
-
-    plt.figure(figsize=(10, 5))
-    plt.bar(team_nums, shotsAuto, label="Auto", color=autoPrimary)
-    plt.bar(team_nums, shotsTeleop, bottom=shotsAuto, label="Teleop", color=telePrimary)
-    plt.bar(
-        team_nums,
-        climbs,
-        bottom=[s1 + s2 for s1, s2 in zip(shotsAuto, shotsTeleop)],
-        label="Climb",
-        color=climbPrimary,
-    )
-    plt.xlabel("Team Number")
-    plt.ylabel("Average Score")
-    plt.title("Average Score by Team")
-    plt.legend()
-
-    plt.tight_layout()
-    plt.show()
-
-
+# TODO: TBA api score predictions, use for scaling?
 def compare_team_scores(teams: list[TeamData], hidden_teams: list[int] = []):
     # Box plots per team and category, sorted by mean total score (auto + teleop + climb)
     print(f"Hidden teams: {hidden_teams}")
