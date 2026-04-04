@@ -137,6 +137,7 @@ class TeamData:
         """Returns the maximum fuel storage capacity of the robot, as reported in the pit data."""
         if self.pit_data is None:
             # raise Exception(f"No pit data for team {self.teamNum}")
+            print(f"No pit data for team {self.teamNum}")
             return 0
         return self.pit_data.maxFuelStorage
 
